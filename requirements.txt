@@ -1,0 +1,8 @@
+# WS2812B LED Controller Dependencies
+
+# SPI interface for Raspberry Pi (Linux only)
+# Note: This package is only available on Linux systems
+spidev>=3.5; sys_platform == 'linux'
+
+# No additional dependencies required!
+# All system stats use native Python 3.10+ standard library
