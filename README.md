@@ -1,3 +1,5 @@
+<img align="right" src="https://visitor-badge.laobi.icu/badge?page_id=platima.Python-WS2812B" height="20" />
+
 # WS2812B LED Controller
 
 A Python-based HTTP server for controlling WS2812B (NeoPixel) RGB LED strips or [Ring LEDs](https://shop.plati.ma/products/ws2812-rgb-led-ring) via SPI interface on nearly any [Single Board Computer (SBC) / eSBC / DevBoard / EvalBoard / ESB](https://github.com/platima/Board-Taxonomies) running Linux, including Busybox/Buildroot!
