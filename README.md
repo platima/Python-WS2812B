@@ -1,6 +1,8 @@
 # WS2812B LED Controller
 
-A Python-based HTTP server for controlling WS2812B (NeoPixel) RGB LED strips via SPI interface on Raspberry Pi.
+A Python-based HTTP server for controlling WS2812B (NeoPixel) RGB LED strips or [Ring LEDs](https://shop.plati.ma/products/ws2812-rgb-led-ring) via SPI interface on nearly any [Single Board Computer (SBC) / eSBC / DevBoard / EvalBoard / ESB](https://github.com/platima/Board-Taxonomies) running Linux, including Busybox/Buildroot!
+
+Tested on [Luckfox Pico Ultra W](https://shop.plati.ma/products/luckfox-pico-ultra) with the Buildroot image and a [MIS5001 Camera](https://shop.plati.ma/products/luckfox-mis5001-5mp-wide-angle-lens-camera-module)
 
 ## Features
 
@@ -14,7 +16,7 @@ A Python-based HTTP server for controlling WS2812B (NeoPixel) RGB LED strips via
 
 ## Hardware Requirements
 
-- Raspberry Pi (any model with SPI support)
+- SBC (any model with SPI support)
 - WS2812B LED strip (NeoPixels)
 - Appropriate power supply for your LED strip
 - Proper level shifting (3.3V to 5V) if needed
@@ -22,23 +24,45 @@ A Python-based HTTP server for controlling WS2812B (NeoPixel) RGB LED strips via
 ## Software Requirements
 
 - Python 3.10+ (uses native standard library only!)
-- SPI enabled on Raspberry Pi
+- SPI enabled on your SBC
 - `spidev` Python package (Linux only, see requirements.txt)
 - Works on minimal Linux distributions like Buildroot
 
 ## Installation
 
-### 1. Enable SPI on Raspberry Pi
+### 1A. Enable SPI on Raspberry Pi
 
 ```bash
 sudo raspi-config
 # Navigate to: Interface Options -> SPI -> Enable
 ```
 
+### 1B. Enable SPI on Luckfox SBC
+
+```bash
+sudo luckfox-config
+# Navigate to: Advanced -> SPI -> [Choose your port] -> enable
+```
+Note: You may need to disable RGB and PWM5
+
+Example Luckfox Pico Ultra W `/etc/luckfox.cf`
+```
+SPI0_M0_CS_ENABLE=0
+SPI0_M0_MODE=1
+RGB_ENABLE=0
+TS_ENABLE=0
+CSI_ENABLE=1
+PWM5_M2_STATUS=0
+SPI0_M0_STATUS=1
+SPI0_M0_MISO_ENABLE=0
+SPI0_M0_SPEED=2400000
+USB_MODE=peripheral
+```
+
 ### 2. Clone Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/platima/Python-WS2812B
 cd Python-WS2812B
 ```
 
@@ -164,10 +188,10 @@ Interactive API documentation with examples.
 ## Wiring Diagram
 
 ```
-Raspberry Pi          WS2812B LED Strip
+SBC                   WS2812B LED Strip
 ------------          -----------------
-GPIO 10 (MOSI) -----> Data In (DIN)
-GND -------------> GND
+MOSI GPIO ----------> Data In (DIN)
+GND ----------------> GND
                       +5V (from separate power supply)
 ```
 
@@ -255,12 +279,6 @@ Pull requests are welcome! Please ensure:
 - Docstrings are included
 - Error handling is appropriate
 - Thread safety is maintained
-
-## Acknowledgments
-
-- WS2812B datasheet and timing specifications
-- Raspberry Pi SPI documentation
-- Python threading and socketserver libraries
 
 ## Changelog
 
