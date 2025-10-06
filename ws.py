@@ -4,14 +4,15 @@ Provides an HTTP web server for controlling RGB LED strips
 
 API Endpoints:
     GET /             - Web control interface
-    GET /update       - Update LED colors (query params: r, g, b [0-255])
+    GET /update       - Update all LED colors (query params: r, g, b [0-255])
+    GET /update_led   - Update individual LED (query params: index, r, g, b)
     GET /health       - Health check and system status
     GET /api/docs     - API documentation
 
 Example API calls:
-    /update?r=255&g=0&b=0     # Set all LEDs to red
-    /update?r=128&g=128&b=128 # Set all LEDs to gray
-    /health                    # Get system status
+    /update?r=255&g=0&b=0           # Set all LEDs to red
+    /update_led?index=0&r=255&g=0&b=0  # Set first LED to red
+    /health                          # Get system status
 """
 import http.server
 import socketserver
@@ -33,6 +34,8 @@ RING_SPEED = 0.03  # Delay between LEDs in startup animation (seconds)
 
 # Global state for current LED color (accessed by multiple threads)
 led_state = {'r': DEFAULT_BRIGHTNESS, 'g': DEFAULT_BRIGHTNESS, 'b': DEFAULT_BRIGHTNESS}
+# State for individual LEDs - list of (r, g, b) tuples
+individual_led_state = [(DEFAULT_BRIGHTNESS, DEFAULT_BRIGHTNESS, DEFAULT_BRIGHTNESS)] * NUM_LEDS
 lock = threading.Lock()  # Protects SPI communication and led_state from concurrent access
 server_start_time = time.time()  # Track server uptime
 update_count = 0  # Track number of LED updates
@@ -212,7 +215,7 @@ def update_leds(r, g, b):
     Returns:
         bool: True if successful, False if failed
     """
-    global update_count
+    global update_count, individual_led_state
     
     with lock:
         try:
@@ -222,9 +225,44 @@ def update_leds(r, g, b):
             spi.xfer2(spi_data)
             time.sleep(0.001)  # Small delay for LED latch
             update_count += 1
+            # Update individual LED state tracking
+            individual_led_state = rgb_list.copy()
             return True
         except Exception as e:
             print(f"Error updating LEDs: {e}")
+            return False
+
+def update_individual_led(index, r, g, b):
+    """
+    Update a single LED to the specified RGB color.
+    Thread-safe via lock to prevent concurrent SPI access.
+    
+    Args:
+        index: LED index (0 to NUM_LEDS-1)
+        r: Red value (0-255)
+        g: Green value (0-255)
+        b: Blue value (0-255)
+        
+    Returns:
+        bool: True if successful, False if failed
+    """
+    global update_count, individual_led_state
+    
+    if index < 0 or index >= NUM_LEDS:
+        return False
+    
+    with lock:
+        try:
+            # Update the specific LED in our state
+            individual_led_state[index] = (r, g, b)
+            # Send entire strip state
+            spi_data = [0x00, 0x00, 0x00] + encode_led_data(individual_led_state)
+            spi.xfer2(spi_data)
+            time.sleep(0.001)  # Small delay for LED latch
+            update_count += 1
+            return True
+        except Exception as e:
+            print(f"Error updating LED {index}: {e}")
             return False
 
 class LEDRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -331,7 +369,7 @@ class LEDRequestHandler(http.server.SimpleHTTPRequestHandler):
                     
                     <div class="endpoint">
                         <h2><span class="method">GET</span> <span class="path">/update</span></h2>
-                        <p><strong>Description:</strong> Update LED colors</p>
+                        <p><strong>Description:</strong> Update all LED colors</p>
                         <p><strong>Query Parameters:</strong></p>
                         <ul>
                             <li><code>r</code> - Red value (0-255, optional)</li>
@@ -346,6 +384,26 @@ class LEDRequestHandler(http.server.SimpleHTTPRequestHandler):
                             <a href="/update?r=0&g=0&b=255">/update?r=0&g=0&b=255</a> - Blue<br>
                             <a href="/update?r=255&g=255&b=255">/update?r=255&g=255&b=255</a> - White<br>
                             <a href="/update?r=0&g=0&b=0">/update?r=0&g=0&b=0</a> - Off
+                        </div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <h2><span class="method">GET</span> <span class="path">/update_led</span></h2>
+                        <p><strong>Description:</strong> Update a single LED color</p>
+                        <p><strong>Query Parameters:</strong></p>
+                        <ul>
+                            <li><code>index</code> - LED index (0-15, required)</li>
+                            <li><code>r</code> - Red value (0-255, required)</li>
+                            <li><code>g</code> - Green value (0-255, required)</li>
+                            <li><code>b</code> - Blue value (0-255, required)</li>
+                        </ul>
+                        <p><strong>Response:</strong> JSON with status and LED info</p>
+                        <div class="example">
+                            <strong>Examples:</strong><br>
+                            <a href="/update_led?index=0&r=255&g=0&b=0">/update_led?index=0&r=255&g=0&b=0</a> - First LED red<br>
+                            <a href="/update_led?index=5&r=0&g=255&b=0">/update_led?index=5&r=0&g=255&b=0</a> - LED 5 green<br>
+                            <a href="/update_led?index=15&r=0&g=0&b=255">/update_led?index=15&r=0&g=0&b=255</a> - Last LED blue<br>
+                            <a href="/update_led?index=0&r=0&g=0&b=0">/update_led?index=0&r=0&g=0&b=0</a> - Turn off first LED
                         </div>
                     </div>
                     
@@ -379,7 +437,52 @@ class LEDRequestHandler(http.server.SimpleHTTPRequestHandler):
             """, "utf-8"))
             return
         
-        # API endpoint for updating LED colors
+        # API endpoint for updating individual LED
+        if self.path.startswith("/update_led"):
+            parsed = urllib.parse.urlparse(self.path)
+            query = urllib.parse.parse_qs(parsed.query)
+            try:
+                # Parse LED index and RGB values
+                index = int(query.get("index", [-1])[0])
+                r = int(query.get("r", [0])[0])
+                g = int(query.get("g", [0])[0])
+                b = int(query.get("b", [0])[0])
+                
+                # Validate index
+                if index < 0 or index >= NUM_LEDS:
+                    self.send_response(400)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": f"Invalid index: {index}. Must be 0-{NUM_LEDS-1}"}).encode())
+                    return
+                
+                # Clamp RGB values to valid range (0-255)
+                r = max(0, min(255, r))
+                g = max(0, min(255, g))
+                b = max(0, min(255, b))
+                
+                # Send to LED
+                success = update_individual_led(index, r, g, b)
+                
+                if success:
+                    self.send_response(200)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "ok", "index": index, "r": r, "g": g, "b": b}).encode())
+                else:
+                    self.send_response(500)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Failed to update LED"}).encode())
+                return
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": f"Bad request: {str(e)}"}).encode())
+                return
+        
+        # API endpoint for updating all LED colors
         if self.path.startswith("/update"):
             parsed = urllib.parse.urlparse(self.path)
             query = urllib.parse.parse_qs(parsed.query)
