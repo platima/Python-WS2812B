@@ -45,7 +45,7 @@ sudo luckfox-config
 ```
 Note: You may need to disable RGB and PWM5
 
-Example Luckfox Pico Ultra W `/etc/luckfox.cf`
+Example Luckfox Pico Ultra W `/etc/luckfox.cfg`
 ```
 SPI0_M0_CS_ENABLE=0
 SPI0_M0_MODE=1
