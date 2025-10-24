@@ -8,13 +8,17 @@ Tested on [Luckfox Pico Ultra W](https://shop.plati.ma/products/luckfox-pico-ult
 
 ## Features
 
-- 🌐 **Web Interface** - Simple, responsive control panel with color sliders
+- 🌐 **Web Interface** - Modern, responsive control panel with Solarized theme
+- 🎨 **Color Picker** - Click the color preview for a visual color picker
+- 🌓 **Dark Mode** - Automatic dark mode with manual toggle and cookie persistence
 - 🔌 **REST API** - Control LEDs programmatically via HTTP requests
+- 💡 **Individual LED Control** - Update single LEDs via API
 - 📊 **Health Monitoring** - Real-time system stats and status endpoint
 - 🧵 **Thread-Safe** - Proper locking for concurrent access
 - 🛡️ **Error Handling** - Graceful error handling and recovery
 - 🎨 **Startup Animation** - Ring animation on startup to verify LEDs
-- 📖 **API Documentation** - Built-in documentation page
+- 📖 **API Documentation** - Built-in interactive documentation page
+- 🎯 **Hex Editing** - Click hex values to edit colors directly
 
 ## Hardware Requirements
 
@@ -121,9 +125,14 @@ Press Ctrl+C to stop the server
 ### 🎨 Control Panel
 **GET** `/`
 
-Interactive web interface with sliders for RGB control.
+Interactive web interface with:
+- RGB sliders with synchronized number inputs
+- Visual color picker (click the color preview box)
+- Dark/light mode toggle with cookie persistence
+- Real-time color preview showing `rgb()` and hex values
+- Clickable hex values for direct editing
 
-### 🔄 Update LEDs
+### 🔄 Update All LEDs
 **GET** `/update`
 
 Update LED colors via query parameters.
@@ -145,7 +154,30 @@ curl "http://localhost:8080/update?r=128&g=0&b=128"
 curl "http://localhost:8080/update?r=0&g=0&b=0"
 ```
 
-### 📊 Health Check
+### � Update Individual LED
+**GET** `/update_led`
+
+Update a single LED color via query parameters.
+
+**Query Parameters:**
+- `index` - LED index (0 to NUM_LEDS-1, required)
+- `r` - Red value (0-255, required)
+- `g` - Green value (0-255, required)
+- `b` - Blue value (0-255, required)
+
+**Examples:**
+```bash
+# Set first LED to red
+curl "http://localhost:8080/update_led?index=0&r=255&g=0&b=0"
+
+# Set LED 5 to green
+curl "http://localhost:8080/update_led?index=5&r=0&g=255&b=0"
+
+# Turn off last LED (index 15 for 16 LEDs)
+curl "http://localhost:8080/update_led?index=15&r=0&g=0&b=0"
+```
+
+### �📊 Health Check
 **GET** `/health`
 
 Returns system status and statistics in JSON format.
@@ -284,7 +316,18 @@ Pull requests are welcome! Please ensure:
 
 ## Changelog
 
-### v2.0.0 (Current)
+### v2.1.0 (Current)
+- ✨ Added visual color picker (click color preview box)
+- ✨ Solarized dark/light theme with system preference detection
+- ✨ Manual theme toggle with cookie persistence
+- ✨ RGB and hex value display in status bar
+- ✨ Clickable hex editing for direct color input
+- ✨ Synchronized sliders and number inputs
+- ✨ Individual LED control API endpoint (`/update_led`)
+- ✨ Footer with GitHub link and theme toggle
+- 🔧 Improved startup messages with IP address detection
+
+### v2.0.0
 - ✅ Fixed race condition in LED state updates
 - ✅ Added comprehensive error handling
 - ✅ Improved resource management with atexit

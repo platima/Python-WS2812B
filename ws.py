@@ -118,7 +118,7 @@ def get_load_average():
     return None
 
 def get_cpu_temp():
-    """Get CPU temperature (Raspberry Pi)."""
+    """Get CPU temperature (Raspberry Pi & Compatible)."""
     try:
         with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
             temp = float(f.read().strip()) / 1000.0
@@ -539,14 +539,190 @@ class LEDRequestHandler(http.server.SimpleHTTPRequestHandler):
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
-                    body {{ font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }}
-                    label {{ display: block; margin-top: 10px; }}
-                    .slider {{ width: 100%; }}
-                    .header {{ display: flex; justify-content: space-between; align-items: center; }}
-                    .links {{ font-size: 0.9em; }}
-                    .links a {{ margin-left: 10px; color: #0066cc; text-decoration: none; }}
-                    .links a:hover {{ text-decoration: underline; }}
-                    .status {{ background: #f0f0f0; padding: 10px; margin: 15px 0; border-radius: 5px; font-size: 0.9em; }}
+                    /* Solarized Light Theme */
+                    :root {{
+                        --base03: #002b36;
+                        --base02: #073642;
+                        --base01: #586e75;
+                        --base00: #657b83;
+                        --base0: #839496;
+                        --base1: #93a1a1;
+                        --base2: #eee8d5;
+                        --base3: #fdf6e3;
+                        --yellow: #b58900;
+                        --orange: #cb4b16;
+                        --red: #dc322f;
+                        --magenta: #d33682;
+                        --violet: #6c71c4;
+                        --blue: #268bd2;
+                        --cyan: #2aa198;
+                        --green: #859900;
+                    }}
+                    
+                    body {{
+                        font-family: sans-serif;
+                        padding: 20px;
+                        max-width: 600px;
+                        margin: 0 auto;
+                        background-color: var(--base3);
+                        color: var(--base00);
+                        transition: background-color 0.3s, color 0.3s;
+                    }}
+                    
+                    /* Dark mode */
+                    body.dark-mode {{
+                        background-color: var(--base03);
+                        color: var(--base0);
+                    }}
+                    
+                    h1 {{
+                        color: var(--blue);
+                    }}
+                    
+                    label {{
+                        display: block;
+                        margin-top: 15px;
+                        font-weight: 500;
+                    }}
+                    
+                    .slider {{
+                        width: calc(100% - 80px);
+                        margin-right: 10px;
+                    }}
+                    
+                    .value-input {{
+                        width: 60px;
+                        padding: 4px 8px;
+                        border: 1px solid var(--base1);
+                        background-color: var(--base2);
+                        color: var(--base00);
+                        border-radius: 3px;
+                        font-size: 14px;
+                    }}
+                    
+                    body.dark-mode .value-input {{
+                        background-color: var(--base02);
+                        color: var(--base0);
+                        border-color: var(--base01);
+                    }}
+                    
+                    .slider-container {{
+                        display: flex;
+                        align-items: center;
+                        margin-top: 5px;
+                    }}
+                    
+                    .header {{
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 20px;
+                    }}
+                    
+                    .links {{
+                        font-size: 0.9em;
+                    }}
+                    
+                    .links a {{
+                        margin-left: 10px;
+                        color: var(--blue);
+                        text-decoration: none;
+                    }}
+                    
+                    .links a:hover {{
+                        text-decoration: underline;
+                        color: var(--cyan);
+                    }}
+                    
+                    .status {{
+                        background: var(--base2);
+                        padding: 10px;
+                        margin: 15px 0;
+                        border-radius: 5px;
+                        font-size: 0.9em;
+                        border-left: 4px solid var(--blue);
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }}
+                    
+                    body.dark-mode .status {{
+                        background: var(--base02);
+                    }}
+                    
+                    .color-preview {{
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 4px;
+                        border: 2px solid var(--base1);
+                        flex-shrink: 0;
+                    }}
+                    
+                    body.dark-mode .color-preview {{
+                        border-color: var(--base01);
+                    }}
+                    
+                    .footer {{
+                        margin-top: 30px;
+                        padding-top: 15px;
+                        border-top: 1px solid var(--base1);
+                        font-size: 0.85em;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        color: var(--base1);
+                    }}
+                    
+                    body.dark-mode .footer {{
+                        border-top-color: var(--base01);
+                    }}
+                    
+                    .footer a {{
+                        color: var(--blue);
+                        text-decoration: none;
+                    }}
+                    
+                    .footer a:hover {{
+                        text-decoration: underline;
+                    }}
+                    
+                    .theme-toggle {{
+                        cursor: pointer;
+                        padding: 5px 10px;
+                        background-color: var(--base2);
+                        border: 1px solid var(--base1);
+                        border-radius: 4px;
+                        color: var(--base00);
+                        font-size: 0.85em;
+                    }}
+                    
+                    body.dark-mode .theme-toggle {{
+                        background-color: var(--base02);
+                        border-color: var(--base01);
+                        color: var(--base0);
+                    }}
+                    
+                    .theme-toggle:hover {{
+                        background-color: var(--cyan);
+                        color: var(--base3);
+                        border-color: var(--cyan);
+                    }}
+                    
+                    .color-picker-wrapper {{
+                        position: relative;
+                        cursor: pointer;
+                    }}
+                    
+                    #color_picker {{
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        opacity: 0;
+                        width: 100%;
+                        height: 100%;
+                        cursor: pointer;
+                        border: none;
+                    }}
                 </style>
             </head>
             <body>
@@ -558,58 +734,279 @@ class LEDRequestHandler(http.server.SimpleHTTPRequestHandler):
                     </div>
                 </div>
                 <div class="status">
-                    <strong>LEDs:</strong> {NUM_LEDS} | 
-                    <strong>Current:</strong> R={led_state['r']} G={led_state['g']} B={led_state['b']}
+                    <div class="color-picker-wrapper">
+                        <div class="color-preview" id="color_preview"></div>
+                        <input type="color" id="color_picker" title="Click to pick a color">
+                    </div>
+                    <div>
+                        <strong>LEDs:</strong> {NUM_LEDS} | 
+                        <span id="rgb_display"></span> | 
+                        <span id="hex_display" style="cursor: pointer; user-select: all;" title="Click to edit"></span>
+                        <input type="text" id="hex_input" style="display: none; width: 80px; padding: 2px 4px; font-family: monospace;" maxlength="7" pattern="#[0-9A-Fa-f]{{6}}">
+                    </div>
                 </div>
-                <label>White:
-                    <input type="range" min="0" max="255" value="{led_state['r']}" id="w" class="slider">
-                    <output id="w_val">{led_state['r']}</output>
+                <label>
+                    White:
+                    <div class="slider-container">
+                        <input type="range" min="0" max="255" value="{led_state['r']}" id="w" class="slider">
+                        <input type="number" min="0" max="255" value="{led_state['r']}" id="w_val" class="value-input">
+                    </div>
                 </label>
 
-                <label>Red:
-                    <input type="range" min="0" max="255" value="{led_state['r']}" id="r" class="slider">
-                    <output id="r_val">{led_state['r']}</output>
+                <label>
+                    Red:
+                    <div class="slider-container">
+                        <input type="range" min="0" max="255" value="{led_state['r']}" id="r" class="slider">
+                        <input type="number" min="0" max="255" value="{led_state['r']}" id="r_val" class="value-input">
+                    </div>
                 </label>
-                <label>Green:
-                    <input type="range" min="0" max="255" value="{led_state['g']}" id="g" class="slider">
-                    <output id="g_val">{led_state['g']}</output>
+                <label>
+                    Green:
+                    <div class="slider-container">
+                        <input type="range" min="0" max="255" value="{led_state['g']}" id="g" class="slider">
+                        <input type="number" min="0" max="255" value="{led_state['g']}" id="g_val" class="value-input">
+                    </div>
                 </label>
-                <label>Blue:
-                    <input type="range" min="0" max="255" value="{led_state['b']}" id="b" class="slider">
-                    <output id="b_val">{led_state['b']}</output>
+                <label>
+                    Blue:
+                    <div class="slider-container">
+                        <input type="range" min="0" max="255" value="{led_state['b']}" id="b" class="slider">
+                        <input type="number" min="0" max="255" value="{led_state['b']}" id="b_val" class="value-input">
+                    </div>
                 </label>
+                
+                <div class="footer">
+                    <div>
+                        <a href="https://github.com/platima/Python-WS2812B" target="_blank">🔗 GitHub Repository</a>
+                    </div>
+                    <div>
+                        <button class="theme-toggle" id="theme_toggle">Switch to Light Mode</button>
+                    </div>
+                </div>
 
                 <script>
+                    // Cookie management
+                    function setCookie(name, value, days) {{
+                        const d = new Date();
+                        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                        document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
+                    }}
+                    
+                    function getCookie(name) {{
+                        const nameEQ = name + "=";
+                        const ca = document.cookie.split(';');
+                        for (let i = 0; i < ca.length; i++) {{
+                            let c = ca[i];
+                            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                        }}
+                        return null;
+                    }}
+                    
+                    // Dark mode detection and handling
+                    function setDarkMode(isDark, updateToggle = true) {{
+                        if (isDark) {{
+                            document.body.classList.add('dark-mode');
+                            if (updateToggle) {{
+                                document.getElementById('theme_toggle').textContent = 'Switch to Light Mode';
+                            }}
+                        }} else {{
+                            document.body.classList.remove('dark-mode');
+                            if (updateToggle) {{
+                                document.getElementById('theme_toggle').textContent = 'Switch to Dark Mode';
+                            }}
+                        }}
+                    }}
+                    
+                    // Check for saved preference first, then system preference
+                    const savedTheme = getCookie('theme');
+                    if (savedTheme) {{
+                        setDarkMode(savedTheme === 'dark');
+                    }} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {{
+                        setDarkMode(true);
+                    }} else {{
+                        setDarkMode(false);
+                    }}
+                    
+                    // Theme toggle button
+                    document.getElementById('theme_toggle').addEventListener('click', function() {{
+                        const isDark = document.body.classList.contains('dark-mode');
+                        setDarkMode(!isDark);
+                        setCookie('theme', !isDark ? 'dark' : 'light', 365);
+                    }});
+                    
+                    // Listen for system theme changes (only if no saved preference)
+                    if (window.matchMedia && !savedTheme) {{
+                        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {{
+                            if (!getCookie('theme')) {{
+                                setDarkMode(event.matches);
+                            }}
+                        }});
+                    }}
+                    
+                    function updateColorPreview(r, g, b) {{
+                        const preview = document.getElementById('color_preview');
+                        preview.style.backgroundColor = `rgb(${{r}}, ${{g}}, ${{b}})`;
+                        
+                        // Update RGB display
+                        document.getElementById('rgb_display').textContent = `rgb(${{r}},${{g}},${{b}})`;
+                        
+                        // Update hex display
+                        const hex = '#' + [r, g, b].map(x => {{
+                            const hex = x.toString(16).padStart(2, '0');
+                            return hex;
+                        }}).join('');
+                        document.getElementById('hex_display').textContent = hex;
+                    }}
+                    
+                    // Hex editing functionality
+                    const hexDisplay = document.getElementById('hex_display');
+                    const hexInput = document.getElementById('hex_input');
+                    
+                    hexDisplay.addEventListener('click', function() {{
+                        hexInput.value = hexDisplay.textContent;
+                        hexDisplay.style.display = 'none';
+                        hexInput.style.display = 'inline';
+                        hexInput.focus();
+                        hexInput.select();
+                    }});
+                    
+                    hexInput.addEventListener('blur', function() {{
+                        applyHexInput();
+                    }});
+                    
+                    hexInput.addEventListener('keydown', function(e) {{
+                        if (e.key === 'Enter') {{
+                            applyHexInput();
+                        }} else if (e.key === 'Escape') {{
+                            hexInput.style.display = 'none';
+                            hexDisplay.style.display = 'inline';
+                        }}
+                    }});
+                    
+                    function applyHexInput() {{
+                        const hexValue = hexInput.value.trim();
+                        const hexRegex = /^#?([0-9A-Fa-f]{{6}})$/;
+                        const match = hexValue.match(hexRegex);
+                        
+                        if (match) {{
+                            const hex = match[1];
+                            const r = parseInt(hex.substring(0, 2), 16);
+                            const g = parseInt(hex.substring(2, 4), 16);
+                            const b = parseInt(hex.substring(4, 6), 16);
+                            
+                            // Update all controls
+                            document.getElementById("r").value = r;
+                            document.getElementById("r_val").value = r;
+                            document.getElementById("g").value = g;
+                            document.getElementById("g_val").value = g;
+                            document.getElementById("b").value = b;
+                            document.getElementById("b_val").value = b;
+                            
+                            sendUpdate(r, g, b);
+                        }}
+                        
+                        hexInput.style.display = 'none';
+                        hexDisplay.style.display = 'inline';
+                    }}
+                    
                     function sendUpdate(r, g, b) {{
                         fetch(`/update?r=${{r}}&g=${{g}}&b=${{b}}`);
+                        updateColorPreview(r, g, b);
+                        
+                        // Update color picker
+                        const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+                        document.getElementById('color_picker').value = hex;
                     }}
+                    
+                    // Color picker functionality
+                    document.getElementById('color_picker').addEventListener('input', function(e) {{
+                        const hex = e.target.value;
+                        const r = parseInt(hex.substring(1, 3), 16);
+                        const g = parseInt(hex.substring(3, 5), 16);
+                        const b = parseInt(hex.substring(5, 7), 16);
+                        
+                        // Update all controls
+                        document.getElementById("r").value = r;
+                        document.getElementById("r_val").value = r;
+                        document.getElementById("g").value = g;
+                        document.getElementById("g_val").value = g;
+                        document.getElementById("b").value = b;
+                        document.getElementById("b_val").value = b;
+                        
+                        sendUpdate(r, g, b);
+                    }});
 
                     function updateFromRGB() {{
                         let r = parseInt(document.getElementById("r").value);
                         let g = parseInt(document.getElementById("g").value);
                         let b = parseInt(document.getElementById("b").value);
-                        document.getElementById("r_val").textContent = r;
-                        document.getElementById("g_val").textContent = g;
-                        document.getElementById("b_val").textContent = b;
+                        
+                        // Sync slider and input
+                        document.getElementById("r_val").value = r;
+                        document.getElementById("g_val").value = g;
+                        document.getElementById("b_val").value = b;
+                        
+                        sendUpdate(r, g, b);
+                    }}
+                    
+                    function updateFromRGBInput() {{
+                        let r = Math.max(0, Math.min(255, parseInt(document.getElementById("r_val").value) || 0));
+                        let g = Math.max(0, Math.min(255, parseInt(document.getElementById("g_val").value) || 0));
+                        let b = Math.max(0, Math.min(255, parseInt(document.getElementById("b_val").value) || 0));
+                        
+                        // Sync slider and input
+                        document.getElementById("r").value = r;
+                        document.getElementById("r_val").value = r;
+                        document.getElementById("g").value = g;
+                        document.getElementById("g_val").value = g;
+                        document.getElementById("b").value = b;
+                        document.getElementById("b_val").value = b;
+                        
                         sendUpdate(r, g, b);
                     }}
 
                     function updateFromWhite() {{
                         let w = parseInt(document.getElementById("w").value);
-                        document.getElementById("w_val").textContent = w;
-                        // Set RGB sliders to match white
+                        document.getElementById("w_val").value = w;
+                        
+                        // Set RGB sliders and inputs to match white
                         ['r', 'g', 'b'].forEach(id => {{
                             document.getElementById(id).value = w;
-                            document.getElementById(id + "_val").textContent = w;
+                            document.getElementById(id + "_val").value = w;
                         }});
+                        
+                        sendUpdate(w, w, w);
+                    }}
+                    
+                    function updateFromWhiteInput() {{
+                        let w = Math.max(0, Math.min(255, parseInt(document.getElementById("w_val").value) || 0));
+                        document.getElementById("w").value = w;
+                        document.getElementById("w_val").value = w;
+                        
+                        // Set RGB sliders and inputs to match white
+                        ['r', 'g', 'b'].forEach(id => {{
+                            document.getElementById(id).value = w;
+                            document.getElementById(id + "_val").value = w;
+                        }});
+                        
                         sendUpdate(w, w, w);
                     }}
 
-                    // Attach event listeners
+                    // Attach event listeners for sliders
                     document.getElementById("w").addEventListener("input", updateFromWhite);
                     document.getElementById("r").addEventListener("input", updateFromRGB);
                     document.getElementById("g").addEventListener("input", updateFromRGB);
                     document.getElementById("b").addEventListener("input", updateFromRGB);
+                    
+                    // Attach event listeners for number inputs
+                    document.getElementById("w_val").addEventListener("input", updateFromWhiteInput);
+                    document.getElementById("r_val").addEventListener("input", updateFromRGBInput);
+                    document.getElementById("g_val").addEventListener("input", updateFromRGBInput);
+                    document.getElementById("b_val").addEventListener("input", updateFromRGBInput);
+                    
+                    // Initialize color preview
+                    updateColorPreview({led_state['r']}, {led_state['g']}, {led_state['b']});
                 </script>
             </body>
             </html>
@@ -619,13 +1016,54 @@ def start_server():
     """Start the HTTP server to serve the LED control interface."""
     handler = LEDRequestHandler
     with socketserver.TCPServer(("", PORT), handler) as httpd:
-        print(f"Serving on http://localhost:{PORT}")
         httpd.serve_forever()
+
+def get_local_ip():
+    """Get the local IP address of the device."""
+    try:
+        # Try to get wlan0 IP address on Linux
+        import socket
+        import fcntl
+        import struct
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # Try wlan0 first
+            ip = socket.inet_ntoa(fcntl.ioctl(
+                s.fileno(),
+                0x8915,  # SIOCGIFADDR
+                struct.pack('256s', b'wlan0'[:15])
+            )[20:24])
+            return ip
+        except:
+            # Fall back to eth0 or other interfaces
+            try:
+                ip = socket.inet_ntoa(fcntl.ioctl(
+                    s.fileno(),
+                    0x8915,
+                    struct.pack('256s', b'eth0'[:15])
+                )[20:24])
+                return ip
+            except:
+                pass
+    except:
+        pass
+    
+    # Fallback method
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "localhost"
 
 if __name__ == "__main__":
     try:
         # Run ring animation once at startup to indicate readiness
-        print(f"Running startup animation...")
+        print(f"  Running startup animation...")
         run_ring_animation(spi, NUM_LEDS, DEFAULT_BRIGHTNESS, delay=RING_SPEED)
 
         # Initialize LEDs to current state
@@ -636,12 +1074,14 @@ if __name__ == "__main__":
         server_thread = threading.Thread(target=start_server, daemon=True)
         server_thread.start()
         
+        local_ip = get_local_ip()
+        
         print(f"\n{'='*50}")
         print(f"🌈 WS2812B LED Controller Started")
         print(f"{'='*50}")
-        print(f"  Control Panel: http://localhost:{PORT}")
-        print(f"  API Docs:      http://localhost:{PORT}/api/docs")
-        print(f"  Health Check:  http://localhost:{PORT}/health")
+        print(f"  Control Panel: http://{local_ip}:{PORT}")
+        print(f"  API Docs:      http://{local_ip}:{PORT}/api/docs")
+        print(f"  Health Check:  http://{local_ip}:{PORT}/health")
         print(f"  LEDs:          {NUM_LEDS} connected")
         print(f"{'='*50}")
         print(f"\nPress Ctrl+C to stop the server\n")
